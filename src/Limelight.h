@@ -572,6 +572,10 @@ bool LiGetEstimatedRttInfo(uint32_t* estimatedRtt, uint32_t* estimatedRttVarianc
 // This function sends a request to the server to execute the requested cmd id.
 int LiSendExecServerCmd(uint8_t cmdId);
 
+// This function sends an empty payload to the server (Apollo protocol extension).
+// Sending it periodically keeps the client's Wi-Fi radio from entering power save.
+int LiSendEmptyPayload(void);
+
 // This function queues a relative mouse move event to be sent to the remote server.
 int LiSendMouseMoveEvent(short deltaX, short deltaY);
 
