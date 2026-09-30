@@ -2107,8 +2107,22 @@ bool LiGetHdrMetadata(PSS_HDR_METADATA metadata) {
     return true;
 }
 
+// The Apollo messages below can be sent from any client thread at any time (e.g. a
+// keepalive timer), so refuse to send unless the control stream is up. Sending after
+// stopControlStream() has destroyed the ENet peer would crash.
+static bool isApolloControlMessageSendable(short packetType) {
+    if (stopping || packetTypes == NULL || packetType == -1) {
+        return false;
+    }
+    return AppVersionQuad[0] >= 5 ? peer != NULL : ctlSock != INVALID_SOCKET;
+}
+
 // Send a server cmd request to the streaming machine
 int LiSendExecServerCmd(uint8_t cmdId) {
+    if (!isApolloControlMessageSendable(packetTypes != NULL ? packetTypes[IDX_EXEC_SERVER_CMD] : -1)) {
+        return -1;
+    }
+
     uint8_t payload[4] = {cmdId, 0, 0, 0};
     return sendMessageAndForget(
         packetTypes[IDX_EXEC_SERVER_CMD],
@@ -2117,11 +2131,15 @@ int LiSendExecServerCmd(uint8_t cmdId) {
         CTRL_CHANNEL_SERVERCTL,
         ENET_PACKET_FLAG_RELIABLE,
         false
-    );
+    ) ? 0 : -1;
 }
 
 // Send an empty keepalive payload to keep the client's Wi-Fi radio out of power save
 int LiSendEmptyPayload(void) {
+    if (!isApolloControlMessageSendable(0x00)) {
+        return -1;
+    }
+
     uint8_t payload[4] = {0xAA, 0x55, 0xAA, 0x55};
     return sendMessageAndForget(
         0x00,
@@ -2130,5 +2148,5 @@ int LiSendEmptyPayload(void) {
         CTRL_CHANNEL_SERVERCTL,
         ENET_PACKET_FLAG_RELIABLE,
         false
-    );
+    ) ? 0 : -1;
 }

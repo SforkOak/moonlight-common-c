@@ -569,11 +569,15 @@ const char* LiGetStageName(int stage);
 // This function may only be called between LiStartConnection() and LiStopConnection().
 bool LiGetEstimatedRttInfo(uint32_t* estimatedRtt, uint32_t* estimatedRttVariance);
 
-// This function sends a request to the server to execute the requested cmd id.
+// This function sends a request to the server to execute the requested cmd id
+// (Apollo protocol extension). cmdId is the index of the command in the host's
+// serverinfo ServerCommand list. Returns 0 on success, -1 if not connected.
 int LiSendExecServerCmd(uint8_t cmdId);
 
 // This function sends an empty payload to the server (Apollo protocol extension).
 // Sending it periodically keeps the client's Wi-Fi radio from entering power save.
+// Returns 0 on success, -1 if not connected. May be called from any thread, but
+// callers should stop calling it before calling LiStopConnection().
 int LiSendEmptyPayload(void);
 
 // This function queues a relative mouse move event to be sent to the remote server.
