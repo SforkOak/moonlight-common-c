@@ -4,6 +4,9 @@
 #include <pthread.h>
 #include <psp2/kernel/processmgr.h>
 #endif
+#if defined(LC_DARWIN)
+#include <pthread/qos.h>
+#endif
 
 // The maximum amount of time before observing an interrupt
 // in PltSleepMsInterruptible().
@@ -87,6 +90,11 @@ void* ThreadProc(void* context) {
     pthread_setname_np(pthread_self(), ctx->name);
 #elif defined(LC_DARWIN)
     pthread_setname_np(ctx->name);
+
+    // Every thread here sits on the path from the network to the screen or speakers
+    // (or from input to the host), so ask the scheduler to treat it as interactive
+    // instead of inheriting whatever QoS the thread calling LiStartConnection() had
+    pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
 #endif
 
     ctx->entry(ctx->context);
