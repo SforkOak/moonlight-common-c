@@ -336,6 +336,9 @@ static int reconstructFrame(PRTP_VIDEO_QUEUE queue) {
     LC_ASSERT(ret == 0);
 
     if (queue->bufferDataPackets != queue->receivedDataPackets) {
+        if (ret == 0) {
+            queue->stats.packetCountFecRecovered += queue->bufferDataPackets - queue->receivedDataPackets;
+        }
 #ifdef FEC_VERBOSE
         Limelog("Recovered %d video data shards from frame %d\n",
                 queue->bufferDataPackets - queue->receivedDataPackets,
@@ -596,6 +599,9 @@ int RtpvAddPacket(PRTP_VIDEO_QUEUE queue, PRTP_PACKET packet, int length, PRTPV_
         if (queue->pendingFecBlockList.count != 0) {
             // Report the final status of the FEC queue before dropping this frame
             reportFinalFrameFecStatus(queue);
+
+            // Whatever this block still lacked is lost for good
+            queue->stats.packetCountFecFailed += queue->bufferDataPackets + queue->bufferParityPackets - queue->pendingFecBlockList.count;
 
             if (queue->multiFecLastBlockNumber != 0) {
                 Limelog("Unrecoverable frame %d (block %d of %d): %d+%d=%d received < %d needed\n",

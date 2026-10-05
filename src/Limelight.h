@@ -916,6 +916,14 @@ typedef struct _RTP_VIDEO_STATS {
     uint32_t packetCountOOS;           // out-of-sequence packets
     uint32_t packetCountInvalid;       // corrupted packets, etc
     uint32_t packetCountFecInvalid;    // invalid FEC packet
+
+    // Receive-side accounting. packetCountVideo and packetCountFec above are what the host
+    // said it sent (counted when a FEC block starts), so received minus expected isn't loss:
+    // parity that arrives after a frame is complete is dropped on purpose.
+    // packetCountFecRecovered counts data packets rebuilt from parity. packetCountFecFailed
+    // counts packets missing from FEC blocks that couldn't be rebuilt.
+    uint32_t packetsReceived;          // every datagram read from the video socket
+    uint64_t bytesReceived;            // their UDP payload size (RTP, FEC and encryption headers included)
 } RTP_VIDEO_STATS, *PRTP_VIDEO_STATS;
 
 const RTP_VIDEO_STATS* LiGetRTPVideoStats(void);
